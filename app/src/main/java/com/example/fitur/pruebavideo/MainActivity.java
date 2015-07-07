@@ -59,7 +59,7 @@ public class MainActivity extends Activity {
             // Request an OpenGL ES 2.0 compatible context.
             glSurfaceView.setEGLContextClientVersion(2);
             // Assign our renderer.
-            glSurfaceView.setRenderer(new OpenGLRenderer());//custom renderer class
+            glSurfaceView.setRenderer(new OpenGLRenderer(this));//custom renderer class
             rendererSet = true;
         } else {
             /*

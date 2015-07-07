@@ -1,6 +1,9 @@
 package com.example.fitur.pruebavideo;
 
+import android.content.Context;
 import android.opengl.GLSurfaceView;
+
+import com.example.fitur.util.TextResourceReader;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -32,8 +35,10 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
     private static final int POSITION_COMPONENT_COUNT = 3;  //vertix coord. dimension
     private static final int BYTES_PER_FLOAT = 4;
     private final FloatBuffer vertexData;
+    private final Context context;
 
-    public OpenGLRenderer(){
+    public OpenGLRenderer(Context context){
+        this.context = context;
         float[] tableVertices = {
                 //triangle1 down
                 0f, 0f, 0f,
@@ -115,6 +120,10 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
         // red, the second is green, the third is blue, and the last
         // component is alpha, for transparency
         glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
+        String vertexShaderSource = TextResourceReader
+                .readTextFileFromResource(context, R.raw.simple_vertex_shader);
+        String fragmentShaderSource = TextResourceReader
+                .readTextFileFromResource(context, R.raw.simple_fragment_shader);
     }
 
     /*Called after the surface has been created or the size has changed*/
