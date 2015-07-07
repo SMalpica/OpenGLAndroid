@@ -2,6 +2,10 @@ package com.example.fitur.pruebavideo;
 
 import android.opengl.GLSurfaceView;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 import static android.opengl.GLES20.glClear;
@@ -14,7 +18,7 @@ import static android.opengl.GLUtils.*;
 import static android.opengl.Matrix.*;
 
 /**
- * http://media.pragprog.com/titles/kbogla/code/FirstOpenGLProject/src/com/firstopenglproject/android/FirstOpenGLProjectRenderer.java
+ * http://media.pragprog.com/titles/kbogla/code/FirstOpenGLProject/src/com/firstopenglproject/android/AirHockeyRenderer.java
  **
  * Excerpted from "OpenGL ES for Android",
  * published by The Pragmatic Bookshelf.
@@ -25,6 +29,84 @@ import static android.opengl.Matrix.*;
  **
  */
 public class OpenGLRenderer implements GLSurfaceView.Renderer{
+    private static final int POSITION_COMPONENT_COUNT = 3;  //vertix coord. dimension
+    private static final int BYTES_PER_FLOAT = 4;
+    private final FloatBuffer vertexData;
+
+    public OpenGLRenderer(){
+        float[] tableVertices = {
+                //triangle1 down
+                0f, 0f, 0f,
+                0f, 14f, 0f,
+                9f, 14f, 0f,
+
+                //triangle2 down
+                0f, 0f, 0f,
+                9f, 0f, 0f,
+                9f, 14f, 0f,
+
+                //triangle1 up
+                0f, 0f, 7f,
+                0f, 14f, 7f,
+                9f, 14f, 7f,
+
+                //triangle2 up
+                0f, 0f, 7f,
+                9f, 0f, 7f,
+                9f, 14f, 7f,
+
+                //triangle1 side1
+                0f, 0f, 0f,
+                0f, 14f, 0f,
+                0f, 0f, 7f,
+
+                //triangle2 side1
+                0f, 0f, 7f,
+                0f, 14f, 7f,
+                0f, 14f, 0f,
+
+                //triangle1 side2
+                0f, 0f, 0f,
+                9f, 0f, 0f,
+                0f, 0f, 7f,
+
+                //triangle2 side2
+                0f, 0f, 7f,
+                9f, 0f, 7f,
+                9f, 0f, 0f,
+
+                //triangle1 side1p
+                9f, 0f, 0f,
+                9f, 14f, 0f,
+                9f, 0f, 7f,
+
+                //triangle2 side1p
+                9f, 0f, 7f,
+                9f, 14f, 7f,
+                9f, 14f, 0f,
+
+                //triangle1 side2p
+                0f, 14f, 0f,
+                9f, 14f, 0f,
+                9f, 14f, 7f,
+
+                //triangle2 side2p
+                0f, 14f, 7f,
+                9f, 14f, 7f,
+                0f, 14f, 0f,
+                                };
+
+        //allocate a block of native memory. This memory will not be managed by the garbage collector
+        //how large the block of memory will be,
+        //organize bytes in native order (same order the platform uses)
+        //work with floats
+        vertexData = ByteBuffer.allocateDirect(tableVertices.length * BYTES_PER_FLOAT)
+                .order(ByteOrder.nativeOrder()).asFloatBuffer();
+        //copy data from Dalvik's VM memory to native memory
+        //the memory will be freed when the process is killed, fine if we don't use lots of vertexData
+        vertexData.put(tableVertices);
+    }
+
 
     /*Called the first time app runs. Also when device wakes up or uses switches between apps*/
     @Override

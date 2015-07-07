@@ -11,7 +11,7 @@ package com.example.fitur.pruebavideo;
  * Visit http://www.pragmaticprogrammer.com/titles/kbogla for more book information.
  **
  */
-
+//TODO: print quick reference cards
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
