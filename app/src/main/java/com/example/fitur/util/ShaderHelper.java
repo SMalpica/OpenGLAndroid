@@ -7,7 +7,6 @@ package com.example.fitur.util;
  * We make no guarantees that this code is fit for any purpose.
  * Visit http://www.pragmaticprogrammer.com/titles/kbogla for more book information.
  ***/
-//TODO: pdf pag 55, 41 del indice
 import android.util.Log;
 
 import static android.opengl.GLES20.*;

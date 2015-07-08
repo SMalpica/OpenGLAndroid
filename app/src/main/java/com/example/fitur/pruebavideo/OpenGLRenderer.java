@@ -35,18 +35,26 @@ import static android.opengl.Matrix.*;
  */
 public class OpenGLRenderer implements GLSurfaceView.Renderer{
     private static final int POSITION_COMPONENT_COUNT = 3;  //vertix coord. dimension
+    private static final int COLOR_COMPONENT_COUNT = 3;
     private static final int BYTES_PER_FLOAT = 4;
     private final FloatBuffer vertexData;
     private final Context context;
     private int program;
-    private static final String U_COLOR = "u_Color";
+//    private static final String U_COLOR = "u_Color";
     private static final String A_POSITION = "a_Position";
-    private int uColorLocation;
+    private static final String A_COLOR = "a_Color";
+    //space tp skip the colors of each vertex in the array
+    //it is very important that the stride is represented in terms of bytes
+    private static final int STRIDE =
+            (POSITION_COMPONENT_COUNT + COLOR_COMPONENT_COUNT) * BYTES_PER_FLOAT;
+//    private int uColorLocation;
     private int aPositionLocation;
+    private int aColorLocation;
 
     public OpenGLRenderer(Context context){
         this.context = context;
-        float[] tableVertices = {
+        /*float[] tableVertices = {
+
                 //triangle1 down
                 -0.5f, -0.5f, -0.5f,
                 -0.5f, 0.5f, -0.5f,
@@ -112,7 +120,66 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
                  // linea
                 -0.5f, 0.75f, 0.75f,
                 -0.5f, -0.75f,0.75f
-                 };
+                 };*/
+        float[] tableVertices = {
+                // Order of coordinates: X, Y, Z, R, G, B
+                //triangle fan
+                0, 0, -0.5f, 1f, 1f, 1f,
+                -0.5f, -0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
+                0.5f, -0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
+                0.5f, 0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
+                -0.5f, 0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
+                -0.5f, -0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
+
+                //triangle1 up
+                -0.5f, -0.5f, 0.7f,
+                -0.5f, 0.5f, 0.7f,
+                0.5f, 0.5f, 0.7f,
+
+                //triangle2 up
+                -0.5f, -0.5f, 0.7f,
+                0.5f, -0.5f, 0.7f,
+                0.5f, 0.5f, 0.7f,
+
+                //triangle1 side1
+                -0.5f, -0.5f, -0.5f,
+                -0.5f, 0.5f, -0.5f,
+                -0.5f, -0.5f, 0.7f,
+
+                //triangle2 side1
+                -0.5f, -0.5f, 0.7f,
+                -0.5f, 0.5f, 0.7f,
+                -0.5f, 0.5f, -0.5f,
+
+                //triangle1 side2
+                -0.5f, -0.5f, -0.5f,
+                0.5f, -0.5f, -0.5f,
+                -0.5f, -0.5f, 0.7f,
+
+                //triangle2 side2
+                -0.5f, -0.5f, 0.7f,
+                0.5f, -0.5f, 0.7f,
+                0.5f, -0.5f, -0.5f,
+
+                //triangle1 side1p
+                0.5f, -0.5f, -0.5f,
+                0.5f, 0.5f, -0.5f,
+                0.5f, -0.5f, 0.7f,
+
+                //triangle2 side1p
+                0.5f, -0.5f, 0.7f,
+                0.5f, 0.5f, 0.7f,
+                0.5f, 0.5f, -0.5f,
+
+                //triangle1 side2p
+                -0.5f, 0.5f, -0.5f,
+                0.5f, 0.5f, -0.5f,
+                0.5f, 0.5f, 0.7f,
+
+                //triangle2 side2p
+                -0.5f, 0.5f, 0.7f,
+                0.5f, 0.5f, 0.7f,
+                -0.5f, 0.5f, -0.5f};
 
         //allocate a block of native memory. This memory will not be managed by the garbage collector
         //how large the block of memory will be,
@@ -150,15 +217,27 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
         //enable the openGL program
         glUseProgram(program);
         //take uniform and attribute location
-        uColorLocation = glGetUniformLocation(program, U_COLOR);    //use this to update uniform's value
+//        uColorLocation = glGetUniformLocation(program, U_COLOR);    //use this to update uniform's value
+        aColorLocation = glGetAttribLocation(program, A_COLOR);
         aPositionLocation = glGetAttribLocation(program, A_POSITION);
         vertexData.position(0); //ensure data will be read from the starting position
         // Bind our data, specified by the variable vertexData, to the vertex
         // attribute at location A_POSITION_LOCATION.
         glVertexAttribPointer(aPositionLocation, POSITION_COMPONENT_COUNT, GL_FLOAT,
-                false, 0, vertexData);
-        //enlable the attribute before qe can start drawing
+                false, STRIDE, vertexData);
+         //enlable the attribute before qe can start drawing
         glEnableVertexAttribArray(aPositionLocation);
+
+        // Bind our data, specified by the variable vertexData, to the vertex
+        // attribute at location A_COLOR_LOCATION.
+        //set position to first color of the array
+        //Had we set the position to 0 instead, OpenGL would be reading in the position as the color.
+        vertexData.position(POSITION_COMPONENT_COUNT);
+        //associate our color data with a_color in the shaders
+        glVertexAttribPointer(aColorLocation, COLOR_COMPONENT_COUNT, GL_FLOAT,
+                false, STRIDE, vertexData);
+        //enable vertex attribute for the color attribute
+        glEnableVertexAttribArray(aColorLocation);
     }
 
     /*Called after the surface has been created or the size has changed*/
@@ -172,15 +251,18 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
     public void onDrawFrame(GL10 glUnused){
         // Clear the rendering surface.
         glClear(GL_COLOR_BUFFER_BIT);
+        /*//we dont need it because we have already associated each vertex with a color
         //update the value of uColor in our shader code
-        glUniform4f(uColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);    //white
-        //draw triangles, start at the beginning of our array, read 36 vertices
+        glUniform4f(uColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);    //white*/
+        glDrawArrays(GL_TRIANGLE_FAN,0,6);
+//        glDrawArrays(GL_TRIANGLES,6,30);
+        /*//draw triangles, start at the beginning of our array, read 36 vertices
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
         glUniform4f(uColorLocation,0.0f,1.0f,0.0f,1.0f);
         glDrawArrays(GL_POINTS, 36, 1);
 
         glUniform4f(uColorLocation, 0.0f, 0.0f, 1.0f, 1.0f);
-        glDrawArrays(GL_LINES, 37, 2);
+        glDrawArrays(GL_LINES, 37, 2);*/
     }
 }
