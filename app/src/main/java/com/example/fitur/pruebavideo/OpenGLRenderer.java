@@ -4,6 +4,7 @@ import android.content.Context;
 import android.opengl.GLSurfaceView;
 
 import com.example.fitur.util.LoggerConfig;
+import com.example.fitur.util.MatrixHelper;
 import com.example.fitur.util.ShaderHelper;
 import com.example.fitur.util.TextResourceReader;
 
@@ -37,19 +38,24 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
     private static final int POSITION_COMPONENT_COUNT = 3;  //vertix coord. dimension
     private static final int COLOR_COMPONENT_COUNT = 3;
     private static final int BYTES_PER_FLOAT = 4;
+    //space tp skip the colors of each vertex in the array
+    //it is very important that the stride is represented in terms of bytes
+    private static final int STRIDE =
+            (POSITION_COMPONENT_COUNT + COLOR_COMPONENT_COUNT) * BYTES_PER_FLOAT;
+
     private final FloatBuffer vertexData;
     private final Context context;
     private int program;
 //    private static final String U_COLOR = "u_Color";
     private static final String A_POSITION = "a_Position";
     private static final String A_COLOR = "a_Color";
-    //space tp skip the colors of each vertex in the array
-    //it is very important that the stride is represented in terms of bytes
-    private static final int STRIDE =
-            (POSITION_COMPONENT_COUNT + COLOR_COMPONENT_COUNT) * BYTES_PER_FLOAT;
+    private static final String U_MATRIX = "u_Matrix";
 //    private int uColorLocation;
     private int aPositionLocation;
     private int aColorLocation;
+    private int uMatrixLocation;
+    private final float[] projectionMatrix = new float[16];
+    private final float[] modelMatrix = new float[16];
 
     public OpenGLRenderer(Context context){
         this.context = context;
@@ -124,62 +130,121 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
         float[] tableVertices = {
                 // Order of coordinates: X, Y, Z, R, G, B
                 //triangle fan
-                0, 0, -0.5f, 1f, 1f, 1f,
-                -0.5f, -0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
-                0.5f, -0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
-                0.5f, 0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
-                -0.5f, 0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
-                -0.5f, -0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
+                0, 0, -0.8f, 1f, 1f, 1f,
+                -0.5f, -0.8f, -0.5f, 0.7f, 0.7f, 0.7f,
+                0.5f, -0.8f, -0.5f, 0.7f, 0.7f, 0.7f,
+                0.5f, 0.8f, -0.5f, 0.7f, 0.7f, 0.7f,
+                -0.5f, 0.8f, -0.5f, 0.7f, 0.7f, 0.7f,
+                -0.5f, -0.8f, -0.5f, 0.7f, 0.7f, 0.7f,
 
                 //triangle1 up
-                -0.5f, -0.5f, 0.7f,
-                -0.5f, 0.5f, 0.7f,
-                0.5f, 0.5f, 0.7f,
+                -0.5f, -0.8f, 0.7f,0.7f, 0.7f, 0.7f,
+                -0.5f, 0.8f, 0.7f,0.7f, 0.7f, 0.7f,
+                0.5f, 0.8f, 0.7f,1f, 1f, 1f,
 
                 //triangle2 up
-                -0.5f, -0.5f, 0.7f,
-                0.5f, -0.5f, 0.7f,
-                0.5f, 0.5f, 0.7f,
+                -0.5f, -0.8f, 0.7f,0.7f, 0.7f, 0.7f,
+                0.5f, -0.8f, 0.7f,0.7f, 0.7f, 0.7f,
+                0.5f, 0.8f, 0.7f,1f, 1f, 1f,
 
                 //triangle1 side1
-                -0.5f, -0.5f, -0.5f,
-                -0.5f, 0.5f, -0.5f,
-                -0.5f, -0.5f, 0.7f,
+                -0.5f, -0.8f, -0.5f,0.7f, 0.7f, 0.7f,
+                -0.5f, 0.8f, -0.5f,0.7f, 0.7f, 0.7f,
+                -0.5f, -0.8f, 0.7f,1f, 1f, 1f,
 
                 //triangle2 side1
-                -0.5f, -0.5f, 0.7f,
-                -0.5f, 0.5f, 0.7f,
-                -0.5f, 0.5f, -0.5f,
+                -0.5f, -0.8f, 0.7f,0.7f, 0.7f, 0.7f,
+                -0.5f, 0.8f, 0.7f,0.7f, 0.7f, 0.7f,
+                -0.5f, 0.8f, -0.5f,1f, 1f, 1f,
 
                 //triangle1 side2
-                -0.5f, -0.5f, -0.5f,
-                0.5f, -0.5f, -0.5f,
-                -0.5f, -0.5f, 0.7f,
+                -0.5f, -0.8f, -0.5f,0.7f, 0.7f, 0.7f,
+                0.5f, -0.8f, -0.5f,0.7f, 0.7f, 0.7f,
+                -0.5f, -0.8f, 0.7f,1f, 1f, 1f,
 
                 //triangle2 side2
-                -0.5f, -0.5f, 0.7f,
-                0.5f, -0.5f, 0.7f,
-                0.5f, -0.5f, -0.5f,
+                -0.5f, -0.8f, 0.7f,0.7f, 0.7f, 0.7f,
+                0.5f, -0.8f, 0.7f,0.7f, 0.7f, 0.7f,
+                0.5f, -0.8f, -0.5f,1f, 1f, 1f,
 
                 //triangle1 side1p
-                0.5f, -0.5f, -0.5f,
-                0.5f, 0.5f, -0.5f,
-                0.5f, -0.5f, 0.7f,
+                0.5f, -0.8f, -0.5f,0.7f, 0.7f, 0.7f,
+                0.5f, 0.8f, -0.5f,0.7f, 0.7f, 0.7f,
+                0.5f, -0.8f, 0.7f,1f, 1f, 1f,
 
                 //triangle2 side1p
-                0.5f, -0.5f, 0.7f,
-                0.5f, 0.5f, 0.7f,
-                0.5f, 0.5f, -0.5f,
+                0.5f, -0.8f, 0.7f,0.7f, 0.7f, 0.7f,
+                0.5f, 0.8f, 0.7f,0.7f, 0.7f, 0.7f,
+                0.5f, 0.8f, -0.5f,1f, 1f, 1f,
 
                 //triangle1 side2p
-                -0.5f, 0.5f, -0.5f,
-                0.5f, 0.5f, -0.5f,
-                0.5f, 0.5f, 0.7f,
+                -0.5f, 0.8f, -0.5f,0.7f, 0.7f, 0.7f,
+                0.5f, 0.8f, -0.5f,0.7f, 0.7f, 0.7f,
+                0.5f, 0.8f, 0.7f,1f, 1f, 1f,
 
                 //triangle2 side2p
-                -0.5f, 0.5f, 0.7f,
-                0.5f, 0.5f, 0.7f,
-                -0.5f, 0.5f, -0.5f};
+                -0.5f, 0.8f, 0.7f,0.7f, 0.7f, 0.7f,
+                0.5f, 0.8f, 0.7f,0.7f, 0.7f, 0.7f,
+                -0.5f, 0.8f, -0.5f,1f, 1f, 1f};
+        /*float[] tableVertices = {
+                // Order of coordinates: X, Y, Z, W, R, G, B
+                //triangle fan
+                0, 0, -0.8f, 1.5f, 1f, 1f, 1f,
+                -0.5f, -0.8f, -0.5f, 1f, 0.7f, 0.7f, 0.7f,
+                0.5f, -0.8f, -0.5f,  1f,0.7f, 0.7f, 0.7f,
+                0.5f, 0.8f, -0.5f,  2f,0.7f, 0.7f, 0.7f,
+                -0.5f, 0.8f, -0.5f, 2f, 0.7f, 0.7f, 0.7f,
+                -0.5f, -0.8f, -0.5f, 1f, 0.7f, 0.7f, 0.7f,
+
+                //triangle1 up
+                -0.5f, -0.8f, 0.7f, 1f, 0.7f, 0.7f, 0.7f,
+                -0.5f, 0.8f, 0.7f, 2f, 0.7f, 0.7f, 0.7f,
+                0.5f, 0.8f, 0.7f, 2f, 1f, 1f, 1f,
+
+                //triangle2 up
+                -0.5f, -0.8f, 0.7f, 1f, 0.7f, 0.7f, 0.7f,
+                0.5f, -0.8f, 0.7f, 1f, 0.7f, 0.7f, 0.7f,
+                0.5f, 0.8f, 0.7f, 2f, 1f, 1f, 1f,
+
+                //triangle1 side1
+                -0.5f, -0.8f, -0.5f, 1f, 0.7f, 0.7f, 0.7f,
+                -0.5f, 0.8f, -0.5f, 2f, 0.7f, 0.7f, 0.7f,
+                -0.5f, -0.8f, 0.7f, 1f, 1f, 1f, 1f,
+
+                //triangle2 side1
+                -0.5f, -0.8f, 0.7f, 1f, 0.7f, 0.7f, 0.7f,
+                -0.5f, 0.8f, 0.7f, 2f, 0.7f, 0.7f, 0.7f,
+                -0.5f, 0.8f, -0.5f, 2f, 1f, 1f, 1f,
+
+                //triangle1 side2
+                -0.5f, -0.8f, -0.5f, 1f, 0.7f, 0.7f, 0.7f,
+                0.5f, -0.8f,  -0.5f, 1f, 0.7f, 0.7f, 0.7f,
+                -0.5f, -0.8f, 0.7f, 1f, 1f, 1f, 1f,
+
+                //triangle2 side2
+                -0.5f, -0.8f, 0.7f, 1f, 0.7f, 0.7f, 0.7f,
+                0.5f, -0.8f, 0.7f, 1f, 0.7f, 0.7f, 0.7f,
+                0.5f, -0.8f, -0.5f, 1f, 1f, 1f, 1f,
+
+                //triangle1 side1p
+                0.5f, -0.8f, -0.5f, 1f, 0.7f, 0.7f, 0.7f,
+                0.5f, 0.8f, -0.5f, 2f, 0.7f, 0.7f, 0.7f,
+                0.5f, -0.8f, 0.7f, 1f, 1f, 1f, 1f,
+
+                //triangle2 side1p
+                0.5f, -0.8f, 0.7f, 1f, 0.7f, 0.7f, 0.7f,
+                0.5f, 0.8f, 0.7f, 2f, 0.7f, 0.7f, 0.7f,
+                0.5f, 0.8f, -0.5f, 2f, 1f, 1f, 1f,
+
+                //triangle1 side2p
+                -0.5f, 0.8f, -0.5f, 2f, 0.7f, 0.7f, 0.7f,
+                0.5f, 0.8f, -0.5f, 2f, 0.7f, 0.7f, 0.7f,
+                0.5f, 0.8f, 0.7f, 2f, 1f, 1f, 1f,
+
+                //triangle2 side2p
+                -0.5f, 0.8f, 0.7f, 2f, 0.7f, 0.7f, 0.7f,
+                0.5f, 0.8f, 0.7f,2f,0.7f, 0.7f, 0.7f,
+                -0.5f, 0.8f, -0.5f, 2f, 1f, 1f, 1f};*/
 
         //allocate a block of native memory. This memory will not be managed by the garbage collector
         //how large the block of memory will be,
@@ -216,6 +281,7 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
         }
         //enable the openGL program
         glUseProgram(program);
+        uMatrixLocation = glGetUniformLocation(program, U_MATRIX);
         //take uniform and attribute location
 //        uColorLocation = glGetUniformLocation(program, U_COLOR);    //use this to update uniform's value
         aColorLocation = glGetAttribLocation(program, A_COLOR);
@@ -246,11 +312,33 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
         //set the viewPort to fill the entire surface
         //This tells OpenGL the size of the surface it has available for rendering
         glViewport(0, 0, width, height);
+        /*final float aspectRatio = width > height ?
+                (float) width / (float) height :
+                (float) height / (float) width;
+        if (width > height) {
+            // Landscape
+            orthoM(projectionMatrix, 0, -aspectRatio, aspectRatio, -1f, 1f, -1f, 1f);
+        } else {
+            // Portrait or square
+            orthoM(projectionMatrix, 0, -1f, 1f, -aspectRatio, aspectRatio, -1f, 1f);
+        }*/
+        //field of vision of 45 degrees, frustrum begins at z=-1, ends at z=-10
+        MatrixHelper.perspectiveM(projectionMatrix, 45, (float) width
+                / (float) height, 1f, 10f);
+        setIdentityM(modelMatrix, 0);
+        translateM(modelMatrix, 0, 0f, 0f, -2f); //move 2 units along the negative z-axis
+        //Whenever we multiply two matrices, we need a temporary area to store the
+        //result.If we try to write the result directly, the results are undefined !
+        final float[] temp = new float[16];
+        multiplyMM(temp, 0, projectionMatrix, 0, modelMatrix, 0);
+        System.arraycopy(temp, 0, projectionMatrix, 0, temp.length);
     }
 
     public void onDrawFrame(GL10 glUnused){
         // Clear the rendering surface.
         glClear(GL_COLOR_BUFFER_BIT);
+        // send the orthographic projection matrix to the shader
+        glUniformMatrix4fv(uMatrixLocation, 1, false, projectionMatrix, 0);
         /*//we dont need it because we have already associated each vertex with a color
         //update the value of uColor in our shader code
         glUniform4f(uColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);    //white*/
