@@ -326,7 +326,10 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
         MatrixHelper.perspectiveM(projectionMatrix, 45, (float) width
                 / (float) height, 1f, 10f);
         setIdentityM(modelMatrix, 0);
-        translateM(modelMatrix, 0, 0f, 0f, -2f); //move 2 units along the negative z-axis
+//        translateM(modelMatrix, 0, 0f, 0f, -2f); //move 2 units along the negative z-axis
+        //We push the table farther, because once we rotate it the bottom end will be closer to us
+        translateM(modelMatrix, 0, 0f, 0f, -2.5f);
+        rotateM(modelMatrix, 0, -60f, 1f, 0f, 0f);
         //Whenever we multiply two matrices, we need a temporary area to store the
         //result.If we try to write the result directly, the results are undefined !
         final float[] temp = new float[16];
