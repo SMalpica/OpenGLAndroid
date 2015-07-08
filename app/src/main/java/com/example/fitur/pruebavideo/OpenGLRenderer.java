@@ -3,6 +3,8 @@ package com.example.fitur.pruebavideo;
 import android.content.Context;
 import android.opengl.GLSurfaceView;
 
+import com.example.fitur.util.LoggerConfig;
+import com.example.fitur.util.ShaderHelper;
 import com.example.fitur.util.TextResourceReader;
 
 import java.nio.ByteBuffer;
@@ -36,70 +38,81 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
     private static final int BYTES_PER_FLOAT = 4;
     private final FloatBuffer vertexData;
     private final Context context;
+    private int program;
+    private static final String U_COLOR = "u_Color";
+    private static final String A_POSITION = "a_Position";
+    private int uColorLocation;
+    private int aPositionLocation;
 
     public OpenGLRenderer(Context context){
         this.context = context;
         float[] tableVertices = {
                 //triangle1 down
-                0f, 0f, 0f,
-                0f, 14f, 0f,
-                9f, 14f, 0f,
+                -0.5f, -0.5f, -0.5f,
+                -0.5f, 0.5f, -0.5f,
+                0.5f, 0.5f, -0.5f,
 
                 //triangle2 down
-                0f, 0f, 0f,
-                9f, 0f, 0f,
-                9f, 14f, 0f,
+                -0.5f, -0.5f, -0.5f,
+                0.5f, -0.5f, -0.5f,
+                0.5f, 0.5f, -0.5f,
 
                 //triangle1 up
-                0f, 0f, 7f,
-                0f, 14f, 7f,
-                9f, 14f, 7f,
+                -0.5f, -0.5f, 0.7f,
+                -0.5f, 0.5f, 0.7f,
+                0.5f, 0.5f, 0.7f,
 
                 //triangle2 up
-                0f, 0f, 7f,
-                9f, 0f, 7f,
-                9f, 14f, 7f,
+                -0.5f, -0.5f, 0.7f,
+                0.5f, -0.5f, 0.7f,
+                0.5f, 0.5f, 0.7f,
 
                 //triangle1 side1
-                0f, 0f, 0f,
-                0f, 14f, 0f,
-                0f, 0f, 7f,
+                -0.5f, -0.5f, -0.5f,
+                -0.5f, 0.5f, -0.5f,
+                -0.5f, -0.5f, 0.7f,
 
                 //triangle2 side1
-                0f, 0f, 7f,
-                0f, 14f, 7f,
-                0f, 14f, 0f,
+                -0.5f, -0.5f, 0.7f,
+                -0.5f, 0.5f, 0.7f,
+                -0.5f, 0.5f, -0.5f,
 
                 //triangle1 side2
-                0f, 0f, 0f,
-                9f, 0f, 0f,
-                0f, 0f, 7f,
+                -0.5f, -0.5f, -0.5f,
+                0.5f, -0.5f, -0.5f,
+                -0.5f, -0.5f, 0.7f,
 
                 //triangle2 side2
-                0f, 0f, 7f,
-                9f, 0f, 7f,
-                9f, 0f, 0f,
+                -0.5f, -0.5f, 0.7f,
+                0.5f, -0.5f, 0.7f,
+                0.5f, -0.5f, -0.5f,
 
                 //triangle1 side1p
-                9f, 0f, 0f,
-                9f, 14f, 0f,
-                9f, 0f, 7f,
+                0.5f, -0.5f, -0.5f,
+                0.5f, 0.5f, -0.5f,
+                0.5f, -0.5f, 0.7f,
 
                 //triangle2 side1p
-                9f, 0f, 7f,
-                9f, 14f, 7f,
-                9f, 14f, 0f,
+                0.5f, -0.5f, 0.7f,
+                0.5f, 0.5f, 0.7f,
+                0.5f, 0.5f, -0.5f,
 
                 //triangle1 side2p
-                0f, 14f, 0f,
-                9f, 14f, 0f,
-                9f, 14f, 7f,
+                -0.5f, 0.5f, -0.5f,
+                0.5f, 0.5f, -0.5f,
+                0.5f, 0.5f, 0.7f,
 
                 //triangle2 side2p
-                0f, 14f, 7f,
-                9f, 14f, 7f,
-                0f, 14f, 0f,
-                                };
+                -0.5f, 0.5f, 0.7f,
+                0.5f, 0.5f, 0.7f,
+                -0.5f, 0.5f, -0.5f,
+
+                 //punto
+                0.5f, 0.75f, 0.5f,
+                 // linea
+                -0.5f, 0.75f, 0.75f,
+                -0.5f, -0.75f,0.75f
+                 };
 
         //allocate a block of native memory. This memory will not be managed by the garbage collector
         //how large the block of memory will be,
@@ -119,11 +132,33 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
         // Set the background clear color to red. The first component is
         // red, the second is green, the third is blue, and the last
         // component is alpha, for transparency
-        glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        //retrieve the shaders source code
         String vertexShaderSource = TextResourceReader
                 .readTextFileFromResource(context, R.raw.simple_vertex_shader);
         String fragmentShaderSource = TextResourceReader
                 .readTextFileFromResource(context, R.raw.simple_fragment_shader);
+        //create the shader objects
+        int vertexShader = ShaderHelper.compileVertexShader(vertexShaderSource);
+        int fragmentShader = ShaderHelper.compileFragmentShader(fragmentShaderSource);
+        //link shaders together in a program
+        program = ShaderHelper.linkProgram(vertexShader, fragmentShader);
+        //validate our program before we start using it
+        if (LoggerConfig.ON) {
+            ShaderHelper.validateProgram(program);
+        }
+        //enable the openGL program
+        glUseProgram(program);
+        //take uniform and attribute location
+        uColorLocation = glGetUniformLocation(program, U_COLOR);    //use this to update uniform's value
+        aPositionLocation = glGetAttribLocation(program, A_POSITION);
+        vertexData.position(0); //ensure data will be read from the starting position
+        // Bind our data, specified by the variable vertexData, to the vertex
+        // attribute at location A_POSITION_LOCATION.
+        glVertexAttribPointer(aPositionLocation, POSITION_COMPONENT_COUNT, GL_FLOAT,
+                false, 0, vertexData);
+        //enlable the attribute before qe can start drawing
+        glEnableVertexAttribArray(aPositionLocation);
     }
 
     /*Called after the surface has been created or the size has changed*/
@@ -137,5 +172,15 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
     public void onDrawFrame(GL10 glUnused){
         // Clear the rendering surface.
         glClear(GL_COLOR_BUFFER_BIT);
+        //update the value of uColor in our shader code
+        glUniform4f(uColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);    //white
+        //draw triangles, start at the beginning of our array, read 36 vertices
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        glUniform4f(uColorLocation,0.0f,1.0f,0.0f,1.0f);
+        glDrawArrays(GL_POINTS, 36, 1);
+
+        glUniform4f(uColorLocation, 0.0f, 0.0f, 1.0f, 1.0f);
+        glDrawArrays(GL_LINES, 37, 2);
     }
 }
