@@ -2,11 +2,10 @@ package com.example.fitur.programs;
 
 import android.content.Context;
 
-import com.example.fitur.pruebavideo.R;
+import com.example.fitur.advancedpruebavideo.R;
 
 import static android.opengl.GLES20.*;
-import static android.opengl.GLUtils.*;
-import static android.opengl.Matrix.*;
+
 /***
  * Excerpted from "OpenGL ES for Android",
  * published by The Pragmatic Bookshelf.

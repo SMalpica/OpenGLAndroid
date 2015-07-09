@@ -1,4 +1,4 @@
-package com.example.fitur.pruebavideo;
+package com.example.fitur.advancedpruebavideo;
 
 import android.content.Context;
 import android.opengl.GLSurfaceView;

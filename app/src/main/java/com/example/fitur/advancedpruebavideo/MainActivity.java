@@ -1,4 +1,4 @@
-package com.example.fitur.pruebavideo;
+package com.example.fitur.advancedpruebavideo;
 
 /**
  * http://media.pragprog.com/titles/kbogla/code/FirstOpenGLProject/src/com/firstopenglproject/android/FirstOpenGLProjectActivity.java
@@ -20,10 +20,6 @@ import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
 import android.widget.Toast;
-
-import static android.opengl.GLES20.*;
-import static android.opengl.GLUtils.*;
-import static android.opengl.Matrix.*;
 
 
 public class MainActivity extends Activity {

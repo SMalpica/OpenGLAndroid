@@ -1,11 +1,10 @@
 package com.example.fitur.programs;
 import android.content.Context;
 
-import com.example.fitur.pruebavideo.R;
+import com.example.fitur.advancedpruebavideo.R;
 
 import static android.opengl.GLES20.*;
-import static android.opengl.GLUtils.*;
-import static android.opengl.Matrix.*;
+
 /***
  * Excerpted from "OpenGL ES for Android",
  * published by The Pragmatic Bookshelf.
@@ -22,9 +21,11 @@ import static android.opengl.Matrix.*;
 public class ColorShaderProgram extends ShaderProgram{
     // Uniform locations
     private final int uMatrixLocation;
+    protected static final String U_COLOR = "u_Color";
     // Attribute locations
     private final int aPositionLocation;
     private final int aColorLocation;
+    private final int uColorLocation=0;
 
 
     public ColorShaderProgram(Context context) {
@@ -37,9 +38,10 @@ public class ColorShaderProgram extends ShaderProgram{
         aColorLocation = glGetAttribLocation(program, A_COLOR);
     }
 
-    public void setUniforms(float[] matrix) {
-    // Pass the matrix into the shader program.
+    public void setUniforms(float[] matrix, float r, float g, float b) {
+        //pass the matrix into the shader program
         glUniformMatrix4fv(uMatrixLocation, 1, false, matrix, 0);
+        glUniform4f(uColorLocation, r, g, b, 1f);
     }
     public int getPositionAttributeLocation() {
         return aPositionLocation;

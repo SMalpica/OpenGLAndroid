@@ -1,4 +1,4 @@
-package com.example.fitur.pruebavideo;
+package com.example.fitur.advancedpruebavideo;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;
