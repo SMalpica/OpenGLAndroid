@@ -94,6 +94,19 @@ public class Geometry {
                     (z * other.x) - (x * other.z),
                     (x * other.y) - (y * other.x));
         }
+        // dot product between two vectors
+        public float dotProduct(Vector other) {
+            return x * other.x
+                    + y * other.y
+                    + z * other.z;
+        }
+        //scales each component of the vector evenly by the scale amount
+        public Vector scale(float f) {
+            return new Vector(
+                    x * f,
+                    y * f,
+                    z * f);
+        }
     }
 
     public static Vector vectorBetween(Point from, Point to) {
@@ -132,5 +145,25 @@ public class Geometry {
         // of this triangle is the distance from the point to the ray.
         float distanceFromPointToRay = areaOfTriangleTimesTwo / lengthOfBase;
         return distanceFromPointToRay;
+    }
+
+    /*a normal vector and a point on that plane; the normal vector of a plane is simply a
+    vector that is perpendicular to that plane*/
+    public static class Plane {
+        public final Point point;
+        public final Vector normal;
+        public Plane(Point point, Vector normal) {
+            this.point = point;
+            this.normal = normal;
+        }
+    }
+
+    public static Point intersectionPoint(Ray ray, Plane plane) {
+        Vector rayToPlaneVector = vectorBetween(ray.point, plane.point);
+        // how much we need to scale the ray’s vector until it touches the plane exactly
+        float scaleFactor = rayToPlaneVector.dotProduct(plane.normal)
+                / ray.vector.dotProduct(plane.normal);
+        Point intersectionPoint = ray.point.translate(ray.vector.scale(scaleFactor));
+        return intersectionPoint;
     }
 }
