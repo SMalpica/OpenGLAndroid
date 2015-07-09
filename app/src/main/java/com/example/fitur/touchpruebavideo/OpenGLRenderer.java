@@ -1,13 +1,15 @@
-package com.example.fitur.advancedpruebavideo;
+package com.example.fitur.touchpruebavideo;
 
 import android.content.Context;
 import android.opengl.GLSurfaceView;
+import android.util.Log;
 
 import com.example.fitur.objects.Mallet;
 import com.example.fitur.objects.Puck;
 import com.example.fitur.objects.Table;
 import com.example.fitur.programs.ColorShaderProgram;
 import com.example.fitur.programs.TextureShaderProgram;
+import com.example.fitur.util.Geometry;
 import com.example.fitur.util.MatrixHelper;
 import com.example.fitur.util.TextureHelper;
 
@@ -45,6 +47,9 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
     private ColorShaderProgram colorProgram;
     private int texture;
 
+    private boolean malletPressed = false;  // keep track of whether the mallet is currently pressed or not
+    private Geometry.Point blueMalletPosition;
+
     public OpenGLRenderer(Context context) {
         this.context = context;
     }
@@ -60,6 +65,8 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
         textureProgram = new TextureShaderProgram(context);
         colorProgram = new ColorShaderProgram(context);
         texture = TextureHelper.loadTexture(context, R.drawable.air_hockey_surface);
+
+        blueMalletPosition = new Geometry.Point(0f, mallet.height / 2f, 0.4f);
     }
 
     /*Called after the surface has been created or the size has changed*/
@@ -177,5 +184,25 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
         translateM(modelMatrix, 0, x, y, z);
         multiplyMM(modelViewProjectionMatrix, 0, viewProjectionMatrix,
                 0, modelMatrix, 0);
+    }
+
+    public void handleTouchPress(float normalizedX, float normalizedY) {
+        Log.e("TOUCH_EVENT", "press in : " + normalizedX + ", " + normalizedY);
+        /*Ray ray = convertNormalized2DPointToRay(normalizedX, normalizedY);
+        // Now test if this ray intersects with the mallet by creating a
+        // bounding sphere that wraps the mallet.
+        Sphere malletBoundingSphere = new Sphere(new Geometry.Point(
+                blueMalletPosition.x,
+                blueMalletPosition.y,
+                blueMalletPosition.z),
+                mallet.height / 2f);
+        // If the ray intersects (if the user touched a part of the screen that
+        // intersects the mallet's bounding sphere), then set malletPressed =
+        // true.
+        malletPressed = Geometry.intersects(malletBoundingSphere, ray);*/
+    }
+
+    public void handleTouchDrag(float normalizedX, float normalizedY) {
+        Log.e("TOUCH_EVENT","dragged to : "+normalizedX+", "+normalizedY);
     }
 }

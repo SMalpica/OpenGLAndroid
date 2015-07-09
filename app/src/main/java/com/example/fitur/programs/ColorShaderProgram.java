@@ -1,7 +1,7 @@
 package com.example.fitur.programs;
 import android.content.Context;
 
-import com.example.fitur.advancedpruebavideo.R;
+import com.example.fitur.touchpruebavideo.R;
 
 import static android.opengl.GLES20.*;
 
