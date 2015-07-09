@@ -35,14 +35,21 @@ import static android.opengl.Matrix.*;
  */
 public class OpenGLRenderer implements GLSurfaceView.Renderer{
     private final Context context;
+
+    //matrix definitions
     private final float[] projectionMatrix = new float[16];
     private final float[] modelMatrix = new float[16];
     private final float[] viewMatrix = new float[16];
     private final float[] viewProjectionMatrix = new float[16];
     private final float[] modelViewProjectionMatrix = new float[16];
+    private final float[] invertedViewProjectionMatrix = new float[16];
+
+    //object definitions
     private Table table;
     private Mallet mallet;
     private Puck puck;
+
+    //program definitions
     private TextureShaderProgram textureProgram;
     private ColorShaderProgram colorProgram;
     private int texture;
@@ -129,6 +136,12 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
         // Clear the rendering surface.
         glClear(GL_COLOR_BUFFER_BIT);
         multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
+        /*This call will create an inverted matrix that we’ll be able to use to convert the
+        two-dimensional touch point into a pair of three-dimensional coordinates. If
+        we move around in our scene, it will affect which part of the scene is underneath
+        our fingers, so we also want to take the view matrix into account. We
+        do this by taking the inverse of the combined view and projection matrices.*/
+        invertM(invertedViewProjectionMatrix, 0, viewProjectionMatrix, 0);
         positionTableInScene();
         textureProgram.useProgram();
         textureProgram.setUniforms(modelViewProjectionMatrix, texture);
@@ -188,10 +201,10 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
 
     public void handleTouchPress(float normalizedX, float normalizedY) {
         Log.e("TOUCH_EVENT", "press in : " + normalizedX + ", " + normalizedY);
-        /*Ray ray = convertNormalized2DPointToRay(normalizedX, normalizedY);
+        Geometry.Ray ray = convertNormalized2DPointToRay(normalizedX, normalizedY);
         // Now test if this ray intersects with the mallet by creating a
         // bounding sphere that wraps the mallet.
-        Sphere malletBoundingSphere = new Sphere(new Geometry.Point(
+        Geometry.Sphere malletBoundingSphere = new Geometry.Sphere(new Geometry.Point(
                 blueMalletPosition.x,
                 blueMalletPosition.y,
                 blueMalletPosition.z),
@@ -199,10 +212,39 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
         // If the ray intersects (if the user touched a part of the screen that
         // intersects the mallet's bounding sphere), then set malletPressed =
         // true.
-        malletPressed = Geometry.intersects(malletBoundingSphere, ray);*/
+        malletPressed = Geometry.intersects(malletBoundingSphere, ray);
+        Log.e("MALLET_PRESSED","vale "+malletPressed);
     }
 
     public void handleTouchDrag(float normalizedX, float normalizedY) {
         Log.e("TOUCH_EVENT","dragged to : "+normalizedX+", "+normalizedY);
+    }
+
+    private Geometry.Ray convertNormalized2DPointToRay(float normalizedX, float normalizedY) {
+        // We'll convert these normalized device coordinates into world-space
+        // coordinates. We'll pick a point on the near and far planes, and draw a
+        // line between them. To do this transform, we need to first multiply by
+        // the inverse matrix, and then we need to undo the perspective divide.
+        final float[] nearPointNdc = {normalizedX, normalizedY, -1, 1};
+        final float[] farPointNdc = {normalizedX, normalizedY, 1, 1};
+        final float[] nearPointWorld = new float[4];
+        final float[] farPointWorld = new float[4];
+        multiplyMV(nearPointWorld, 0, invertedViewProjectionMatrix, 0, nearPointNdc, 0);
+        multiplyMV(farPointWorld, 0, invertedViewProjectionMatrix, 0, farPointNdc, 0);
+        divideByW(nearPointWorld);
+        divideByW(farPointWorld);
+
+        Geometry.Point nearPointRay =
+                new Geometry.Point(nearPointWorld[0], nearPointWorld[1], nearPointWorld[2]);
+        Geometry.Point farPointRay =
+                new Geometry.Point(farPointWorld[0], farPointWorld[1], farPointWorld[2]);
+        return new Geometry.Ray(nearPointRay,
+                Geometry.vectorBetween(nearPointRay, farPointRay));
+    }
+
+    private void divideByW(float[] vector) {
+        vector[0] /= vector[3];
+        vector[1] /= vector[3];
+        vector[2] /= vector[3];
     }
 }
