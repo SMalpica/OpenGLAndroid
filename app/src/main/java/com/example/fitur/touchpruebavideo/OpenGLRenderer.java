@@ -104,16 +104,16 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
         * rm -> destination array. at least 16 elements long
         * rmOffset -> position of rm to start writing
         * eyeX, eyeY, eyeZ -> where the eye will be, everything in the scene will appear as
-        *                        if we’re viewing it from this point
+        *                        if we're viewing it from this point
         * centerX, centerY, centerZ -> where the eye is looking (center of the scene)
         * upX, upY, upZ -> If we were talking about your eyes, then this is where your head would be
         *                  pointing. An upY of 1 means your head would be pointing straight up*/
         setLookAtM(viewMatrix, 0, 0f, 1.2f, 2.2f, 0f, 0f, 0f, 0f, 1f, 0f);
         /*We call setLookAtM() with an eye of (0, 1.2, 2.2), meaning your eye will be 1.2 units
         above the x-z plane and 2.2 units back. In other words, everything in the scene will appear
-        1.2 units below you and 2.2 units in front of you. A center of (0, 0, 0) means you’ll be
+        1.2 units below you and 2.2 units in front of you. A center of (0, 0, 0) means you'll be
         looking down toward the origin in front of you, and an up of (0, 1, 0) means that your head
-        will be pointing straight up and the scene won’t be rotated to either side.*/
+        will be pointing straight up and the scene won't be rotated to either side.*/
     }
     /*@Override
     public void onSurfaceChanged(GL10 glUnused, int width, int height){
@@ -148,12 +148,42 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
     /*We clear the rendering surface, and then the first thing we do is draw the table*/
     @Override
     public void onDrawFrame(GL10 glUnused) {
-        //update the puck position
-        puckPosition = puckPosition.translate(puckVector);
         // Clear the rendering surface.
         glClear(GL_COLOR_BUFFER_BIT);
+
+        //update the puck position
+        puckPosition = puckPosition.translate(puckVector);
+        //keep the puck inside the board bounds
+        if (puckPosition.x < leftBound + puck.radius
+                || puckPosition.x > rightBound - puck.radius) {
+            /*We first check if the puck has gone either too far to the left or too far to the
+            right. If it has, then we reverse its direction by inverting the x component of
+            the vector.*/
+            puckVector = new Geometry.Vector(-puckVector.x, puckVector.y, puckVector.z);
+            puckVector = puckVector.scale(0.9f);
+        }
+        if (puckPosition.z < farBound + puck.radius
+                || puckPosition.z > nearBound - puck.radius) {
+            /* check if the puck has gone past the near or far edges of the table. In that case,
+            we reverse its direction by inverting the z component of the vector. Don't get confused
+            by the z checks-the further away something is, the smaller the z, since negative z
+            points into the distance*/
+            puckVector = new Geometry.Vector(puckVector.x, puckVector.y, -puckVector.z);
+            puckVector = puckVector.scale(0.9f);
+        }
+        // Clamp the puck position.
+        /*we bring the puck back within the confines of the table by clamping it to the table bounds*/
+        puckPosition = new Geometry.Point(
+                clamp(puckPosition.x, leftBound + puck.radius, rightBound - puck.radius),
+                puckPosition.y,
+                clamp(puckPosition.z, farBound + puck.radius, nearBound - puck.radius)
+        );
+
+        // Friction factor
+        puckVector = puckVector.scale(0.99f);
+
         multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
-        /*This call will create an inverted matrix that we’ll be able to use to convert the
+        /*This call will create an inverted matrix that we'll be able to use to convert the
         two-dimensional touch point into a pair of three-dimensional coordinates. If
         we move around in our scene, it will affect which part of the scene is underneath
         our fingers, so we also want to take the view matrix into account. We
@@ -202,7 +232,7 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
         rotateM(modelMatrix, 0, -90f, 1f, 0f, 0f);
         multiplyMM(modelViewProjectionMatrix, 0, viewProjectionMatrix,
                 0, modelMatrix, 0);
-        /*Note that unlike previous lessons, we don’t also translate the table into the distance
+        /*Note that unlike previous lessons, we don't also translate the table into the distance
         because we want to keep the table at (0, 0, 0) in world coordinates, and the
         view matrix is already taking care of making the table visible for us.*/
     }

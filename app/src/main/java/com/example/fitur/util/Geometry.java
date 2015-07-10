@@ -11,7 +11,7 @@ import android.util.FloatMath;
  * Visit http://www.pragmaticprogrammer.com/titles/kbogla for more book information.
  ***/
 
-/* we’ve defined our geometry classes as immutable; whenever we make a change, we return a new
+/* we've defined our geometry classes as immutable; whenever we make a change, we return a new
  * object. This helps to make the code easier to work with and understand, but when you need
  * top performance, you might want to stick with simple floating-point arrays and mutate them
  * with static functions
@@ -160,7 +160,7 @@ public class Geometry {
 
     public static Point intersectionPoint(Ray ray, Plane plane) {
         Vector rayToPlaneVector = vectorBetween(ray.point, plane.point);
-        // how much we need to scale the ray’s vector until it touches the plane exactly
+        // how much we need to scale the ray's vector until it touches the plane exactly
         float scaleFactor = rayToPlaneVector.dotProduct(plane.normal)
                 / ray.vector.dotProduct(plane.normal);
         Point intersectionPoint = ray.point.translate(ray.vector.scale(scaleFactor));

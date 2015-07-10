@@ -69,9 +69,9 @@ public class ObjectBuilder {
 
         ObjectBuilder builder = new ObjectBuilder(size);
         //calculate where the top of the puck should be
-        /*The puck is vertically centered at center.y, so it’s fine to place the cylinder side
+        /*The puck is vertically centered at center.y, so it's fine to place the cylinder side
         there. The cylinder top, however, needs to be placed at the top of the puck.
-        To do that, we move it up by half of the puck’s overall height*/
+        To do that, we move it up by half of the puck's overall height*/
         Geometry.Circle puckTop = new Geometry.Circle(
                 puck.center.translateY(puck.height / 2f),
                 puck.radius);
@@ -136,7 +136,7 @@ public class ObjectBuilder {
         /*To generate points around a circle, we first need a loop that will range over
         the entire circle from 0 to 360 degrees, or 0 to 2 times pi in radians. To find
         the x position of a point around the circle, we call cos(angle), and to find the z
-        position, we call sin(angle); we scale both by the circle’s radius.
+        position, we call sin(angle); we scale both by the circle's radius.
         Since our circle is going to be lying flat on the x-z plane, the y component of
         the unit circle maps to our y position*/
         drawList.add(new DrawCommand() {
