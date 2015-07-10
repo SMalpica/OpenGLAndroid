@@ -59,6 +59,10 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
     private final float farBound = -0.8f;
     private final float nearBound = 0.8f;
 
+    //puck properties
+    private Geometry.Point puckPosition;
+    private Geometry.Vector puckVector;
+
     //program definitions
     private TextureShaderProgram textureProgram;
     private ColorShaderProgram colorProgram;
@@ -83,6 +87,8 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
         texture = TextureHelper.loadTexture(context, R.drawable.air_hockey_surface);
 
         blueMalletPosition = new Geometry.Point(0f, mallet.height / 2f, 0.4f);
+        puckPosition = new Geometry.Point(0f, puck.height / 2f, 0f);
+        puckVector = new Geometry.Vector(0f, 0f, 0f);
     }
 
     /*Called after the surface has been created or the size has changed*/
@@ -142,6 +148,8 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
     /*We clear the rendering surface, and then the first thing we do is draw the table*/
     @Override
     public void onDrawFrame(GL10 glUnused) {
+        //update the puck position
+        puckPosition = puckPosition.translate(puckVector);
         // Clear the rendering surface.
         glClear(GL_COLOR_BUFFER_BIT);
         multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
@@ -170,7 +178,8 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
         // different color.
         mallet.draw();
         // Draw the puck.
-        positionObjectInScene(0f, puck.height / 2f, 0f);
+//        positionObjectInScene(0f, puck.height / 2f, 0f);
+        positionObjectInScene(puckPosition.x, puckPosition.y, puckPosition.z);
         colorProgram.setUniforms(modelViewProjectionMatrix, 0.8f, 0.8f, 1f);
         puck.bindData(colorProgram);
         puck.draw();
@@ -235,6 +244,7 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
             // Find out where the touched point intersects the plane
             // representing our table. We'll move the mallet along this plane.
             Geometry.Point touchedPoint = Geometry.intersectionPoint(ray, plane);
+            previousBlueMalletPosition = blueMalletPosition;
             blueMalletPosition =
 //                    new Geometry.Point(touchedPoint.x, mallet.height / 2f, touchedPoint.z);
                     new Geometry.Point(
@@ -245,6 +255,15 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
                             clamp(touchedPoint.z,
                                     0f + mallet.radius, //middle of the table so that the mallet can't pass to the opponent's side
                                     nearBound - mallet.radius));
+            //see if the mallet has hit the puck
+            float distance = Geometry.vectorBetween(blueMalletPosition, puckPosition).length();
+            if (distance < (puck.radius + mallet.radius)) {
+                // The mallet has struck the puck. Now send the puck flying
+                // based on the mallet velocity.
+                //create a direction vector with previous and current mallet position
+                puckVector = Geometry.vectorBetween(
+                        previousBlueMalletPosition, blueMalletPosition);
+            }
         }
     }
 
