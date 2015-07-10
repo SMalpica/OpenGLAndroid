@@ -22,7 +22,7 @@ import static android.opengl.GLES20.glViewport;
 import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
 
 import static android.opengl.Matrix.*;
-//TODO: pag 127 del pdf, 114 del libro
+//TODO: pag 192 del pdf, 181 del libro
 /**
  * http://media.pragprog.com/titles/kbogla/code/FirstOpenGLProject/src/com/firstopenglproject/android/AirHockeyRenderer.java
  **
@@ -50,13 +50,21 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
     private Mallet mallet;
     private Puck puck;
 
+    //blue mallet properties
+    private boolean malletPressed = false;  // keep track of whether the mallet is currently pressed or not
+    private Geometry.Point blueMalletPosition;
+    private Geometry.Point previousBlueMalletPosition;
+    private final float leftBound = -0.5f;
+    private final float rightBound = 0.5f;
+    private final float farBound = -0.8f;
+    private final float nearBound = 0.8f;
+
     //program definitions
     private TextureShaderProgram textureProgram;
     private ColorShaderProgram colorProgram;
     private int texture;
 
-    private boolean malletPressed = false;  // keep track of whether the mallet is currently pressed or not
-    private Geometry.Point blueMalletPosition;
+
 
     public OpenGLRenderer(Context context) {
         this.context = context;
@@ -215,7 +223,7 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
         // intersects the mallet's bounding sphere), then set malletPressed =
         // true.
         malletPressed = Geometry.intersects(malletBoundingSphere, ray);
-        Log.e("MALLET_PRESSED","vale "+malletPressed);
+        Log.e("MALLET_PRESSED", "vale " + malletPressed);
     }
 
     public void handleTouchDrag(float normalizedX, float normalizedY) {
@@ -228,8 +236,21 @@ public class OpenGLRenderer implements GLSurfaceView.Renderer{
             // representing our table. We'll move the mallet along this plane.
             Geometry.Point touchedPoint = Geometry.intersectionPoint(ray, plane);
             blueMalletPosition =
-                    new Geometry.Point(touchedPoint.x, mallet.height / 2f, touchedPoint.z);
+//                    new Geometry.Point(touchedPoint.x, mallet.height / 2f, touchedPoint.z);
+                    new Geometry.Point(
+                            clamp(touchedPoint.x,
+                                    leftBound + mallet.radius,
+                                    rightBound - mallet.radius),
+                            mallet.height / 2f,
+                            clamp(touchedPoint.z,
+                                    0f + mallet.radius, //middle of the table so that the mallet can't pass to the opponent's side
+                                    nearBound - mallet.radius));
         }
+    }
+
+
+    private float clamp(float value, float min, float max) {
+        return Math.min(max, Math.max(value, min));
     }
 
     private Geometry.Ray convertNormalized2DPointToRay(float normalizedX, float normalizedY) {
